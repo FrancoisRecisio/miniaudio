@@ -41702,6 +41702,8 @@ typedef struct
     ma_device_descriptor* pDescriptorCapture;
 } ma_audio_worklet_thread_initialized_data;
 
+ma_uint64 g_totalFrames = 0;
+
 static EM_BOOL ma_audio_worklet_process_callback__webaudio(int inputCount, const AudioSampleFrame* pInputs, int outputCount, AudioSampleFrame* pOutputs, int paramCount, const AudioParamFrame* pParams, void* pUserData)
 {
     ma_device* pDevice = (ma_device*)pUserData;
@@ -41724,7 +41726,9 @@ static EM_BOOL ma_audio_worklet_process_callback__webaudio(int inputCount, const
         frameCount = pDevice->capture.internalPeriodSizeInFrames;
     }
 
-    if (ma_device_get_state(pDevice) != ma_device_state_started) {
+    g_totalFrames += frameCount;
+
+    if (g_totalFrames < 44100 || ma_device_get_state(pDevice) != ma_device_state_started) {
         /* Fill the output buffer with zero to avoid a noise sound */
         for (int i = 0; i < outputCount; i += 1) {
             MA_ZERO_MEMORY(pOutputs[i].data, pOutputs[i].numberOfChannels * frameCount * sizeof(float));
